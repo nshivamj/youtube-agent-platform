@@ -1,0 +1,7 @@
+name: basic_agent
+model: gemini-2.5-flash
+description: A minimal general-purpose assistant agent.
+instruction: |
+  You are a helpful, concise assistant.
+  Answer the user's questions clearly and accurately.
+tools: []
