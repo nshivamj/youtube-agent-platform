@@ -9,7 +9,7 @@ Routing rules (by suffix convention):
 from typing import Any
 
 from app.agents.definitions import AgentDefinition
-from app.tools import mcp_loader
+from app.tools import local_loader, mcp_loader
 
 
 def load_tools(agent_def: AgentDefinition) -> list[Any]:
@@ -21,9 +21,7 @@ def load_tools(agent_def: AgentDefinition) -> list[Any]:
             tools.append(mcp_loader.load(name))
 
         elif name.endswith("_local"):
-            # Future: from app.tools import local_loader
-            # tools.append(local_loader.load(name))
-            raise NotImplementedError(f"Local tools not yet supported: '{name}'")
+            tools.append(local_loader.load(name))
 
         elif name.endswith("_agent"):
             # Future: from app.tools import builder
