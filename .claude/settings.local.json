@@ -28,7 +28,8 @@
       "Bash(git push -u origin claude/review-project-codebase-vU58J)",
       "Bash(git add .claude/settings.local.json agents/__init__.py)",
       "Bash(git add agents/basic_agent/ agents/github_agent/)",
-      "Bash(gh pr list --head claude/review-project-codebase-vU58J)"
+      "Bash(gh pr list --head claude/review-project-codebase-vU58J)",
+      "Bash(git commit:*)"
     ]
   },
   "model": "opus"
