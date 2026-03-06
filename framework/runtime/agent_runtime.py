@@ -12,12 +12,16 @@ logger = logging.getLogger("platform.runtime")
 class AgentRuntime:
     """Safety boundary for all agent execution.
     Flow: validate_input → compose_callbacks → inject_tools → execute → validate_output.
-    Nothing runs ungoverned. Every action observable via callbacks."""
+    Nothing runs ungoverned. Every action observable via callbacks.
 
-    def __init__(self, app_name: str = "youtube_platform"):
+    Pass a custom composer to add domain-specific callbacks (e.g. governance_composer
+    for audit workflows that need approval gating + risk blocking).
+    """
+
+    def __init__(self, app_name: str = "youtube_platform", callbacks: CallbackComposer = None):
         self.app_name = app_name
         self._runners: dict = {}
-        self.callbacks = composer
+        self.callbacks = callbacks or composer
 
     def _get_runner(self, agent) -> Runner:
         name = agent.name
@@ -128,3 +132,9 @@ class AgentRuntime:
 
 
 runtime = AgentRuntime()
+
+# Governance runtime for audit/compliance workflows.
+# Adds ApprovalCallback (agent pause-for-approval) + RiskCallback (block high-risk tools).
+from framework.callbacks.composer import governance_composer  # noqa: E402
+
+control_testing_runtime = AgentRuntime(callbacks=governance_composer)

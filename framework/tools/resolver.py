@@ -1,8 +1,8 @@
-import inspect
 from framework.tools.registry import registry
 
 
-# Methods to expose per domain — keeps tool surface area intentional
+# Methods to expose per domain — keeps tool surface area intentional.
+# When you add a new domain tool, add its exposed methods here.
 DOMAIN_METHODS = {
     "youtube": [
         "get_watch_summary",
@@ -24,23 +24,27 @@ DOMAIN_METHODS = {
 
 class ToolResolver:
     """Selects which tools an agent gets based on agent role + environment.
-    Extracts individual async methods from tool instances and returns them
-    as plain callables that ADK can use as FunctionTools."""
 
-    AGENT_DOMAINS = {
-        "analyzer_agent": ["youtube"],
-        "insights_agent": ["file"],
-        "coordinator_agent": [],
-        "planner_agent": [],
-        # Control testing agents
-        "control_test_planner": [],
-        "control_test_reviewer": [],
-        "control_test_executor": ["entitlement"],
-        "control_test_reporter": [],
-    }
+    Agents self-declare their domains by calling resolver.declare() in their
+    own module — no manual edits to this file needed when adding new agents.
+
+    Extracts individual async methods from tool instances and returns them
+    as plain callables that ADK can use as FunctionTools.
+    """
+
+    def __init__(self):
+        self._agent_domains: dict[str, list[str]] = {}
+
+    def declare(self, agent_name: str, domains: list[str]):
+        """Called by each agent module to register which tool domains it needs.
+
+        Example (in agents/my_agent.py):
+            resolver.declare("my_agent", domains=["youtube", "file"])
+        """
+        self._agent_domains[agent_name] = domains
 
     def resolve(self, agent_name: str) -> list:
-        domains = self.AGENT_DOMAINS.get(agent_name, [])
+        domains = self._agent_domains.get(agent_name, [])
         tools = []
         for domain in domains:
             tool_instance = registry.get(domain)

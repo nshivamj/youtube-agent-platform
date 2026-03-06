@@ -2,6 +2,8 @@ from google.adk.agents import LlmAgent
 from core.schemas import InsightsOutput
 from framework.tools.resolver import resolver
 
+resolver.declare("insights_agent", domains=["file"])
+
 
 def build_insights_agent() -> LlmAgent:
     tools = resolver.resolve("insights_agent")

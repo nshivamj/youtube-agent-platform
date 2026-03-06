@@ -4,6 +4,13 @@ from agents.control_planner_agent import control_test_planner
 from agents.control_reviewer_agent import control_test_reviewer
 from agents.control_executor_agent import control_test_executor
 from agents.control_reporter_agent import control_test_reporter
+from framework.workflow_registry import workflow_registry
+
+# Governance runtime — includes ApprovalCallback + RiskCallback.
+# Use this runtime (not the default) when executing this workflow programmatically:
+#   from workflows.control_testing_workflow import control_testing_runtime
+#   await control_testing_runtime.execute_streaming(control_testing_workflow, ...)
+from framework.runtime.agent_runtime import control_testing_runtime  # noqa: F401
 
 
 # Review loop — runs the reviewer up to 5 times across different audit angles
@@ -29,5 +36,21 @@ control_testing_workflow = SequentialAgent(
         plan_review_loop,       # step 2 — 5× peer review
         control_test_executor,  # step 3 — run check_user_entitlements
         control_test_reporter,  # step 4 — write ControlTestSummary
+    ],
+)
+
+workflow_registry.register(
+    name="control_testing_workflow",
+    workflow=control_testing_workflow,
+    description=(
+        "Runs an end-to-end entitlement control test: plan, peer review, "
+        "execute access checks, and produce a compliance summary report"
+    ),
+    triggers=[
+        "run control test",
+        "check entitlements",
+        "audit user access",
+        "test who has access to",
+        "compliance check",
     ],
 )

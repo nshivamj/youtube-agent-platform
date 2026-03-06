@@ -5,17 +5,24 @@ from framework.callbacks.narration_callback import NarrationCallback
 from observability.tracker import ObservabilityTracker
 
 
-class CallbackComposer(BaseCallback):
-    """Merges global + agent-specific callbacks into one pipeline.
-    Runtime talks to this one object only."""
+_BASE_CALLBACKS = [
+    LoggingCallback(),
+    TracingCallback(),
+    NarrationCallback(),
+    ObservabilityTracker(),
+]
 
-    def __init__(self, callbacks: list[BaseCallback] = None):
-        self._callbacks = callbacks or [
-            LoggingCallback(),
-            TracingCallback(),
-            NarrationCallback(),
-            ObservabilityTracker(),
-        ]
+
+class CallbackComposer(BaseCallback):
+    """Merges global + domain-specific callbacks into one pipeline.
+    Runtime talks to this one object only.
+
+    Pass extra_callbacks to layer domain-specific callbacks (e.g. approval,
+    risk) on top of the standard base set without replacing it.
+    """
+
+    def __init__(self, extra_callbacks: list[BaseCallback] = None):
+        self._callbacks = _BASE_CALLBACKS + (extra_callbacks or [])
 
     async def on_agent_start(self, agent_name, context):
         for cb in self._callbacks:
@@ -46,4 +53,13 @@ class CallbackComposer(BaseCallback):
             await cb.on_error(agent_name, error, context)
 
 
+# Default composer — standard observability only
 composer = CallbackComposer()
+
+# Governance composer — adds approval gating + risk blocking for audit workflows
+from framework.callbacks.approval_callback import ApprovalCallback   # noqa: E402
+from framework.callbacks.risk_callback import RiskCallback           # noqa: E402
+
+governance_composer = CallbackComposer(
+    extra_callbacks=[ApprovalCallback(), RiskCallback()]
+)
