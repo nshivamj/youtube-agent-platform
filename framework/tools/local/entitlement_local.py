@@ -46,6 +46,7 @@ class EntitlementLocalTools(BaseTool):
 
     name = "entitlement_tools"
     description = "Validates user entitlements for a given application"
+    tool_names = ["check_user_entitlements"]
 
     async def check_user_entitlements(
         self,

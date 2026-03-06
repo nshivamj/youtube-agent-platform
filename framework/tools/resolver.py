@@ -1,60 +1,40 @@
-from framework.tools.registry import registry
-
-
-# Methods to expose per domain — keeps tool surface area intentional.
-# When you add a new domain tool, add its exposed methods here.
-DOMAIN_METHODS = {
-    "youtube": [
-        "get_watch_summary",
-        "get_shorts_ratio",
-        "get_top_channels",
-        "get_watch_by_hour",
-        "get_binge_sessions",
-    ],
-    "file": [
-        "save_report",
-        "list_reports",
-        "get_report",
-    ],
-    "entitlement": [
-        "check_user_entitlements",
-    ],
-}
-
-
 class ToolResolver:
-    """Selects which tools an agent gets based on agent role + environment.
+    """Flat name → callable tool registry.
 
-    Agents self-declare their domains by calling resolver.declare() in their
-    own module — no manual edits to this file needed when adding new agents.
+    Two responsibilities:
+    - register_tool(name, fn): called once at startup by ToolRegistry for every
+      active tool method (respects TOOL_MODE local/mcp swap automatically).
+    - declare(agent_name, tools=[...]): called by each agent to list exactly
+      which tool names it needs — no bundles, no domain indirection.
+    - resolve(agent_name): returns the callables that agent declared.
 
-    Extracts individual async methods from tool instances and returns them
-    as plain callables that ADK can use as FunctionTools.
+    Adding a new agent: call resolver.declare() in the agent file — done.
+    Adding a new tool:  add the method to the tool class + tool_names — done.
+    No central config to edit in either case.
     """
 
     def __init__(self):
-        self._agent_domains: dict[str, list[str]] = {}
+        self._tools: dict[str, callable] = {}
+        self._agent_tools: dict[str, list[str]] = {}
 
-    def declare(self, agent_name: str, domains: list[str]):
-        """Called by each agent module to register which tool domains it needs.
+    def register_tool(self, name: str, fn: callable):
+        """Called by ToolRegistry to expose a tool callable by name."""
+        self._tools[name] = fn
+
+    def declare(self, agent_name: str, tools: list[str]):
+        """Called by each agent module to declare its exact tool surface.
 
         Example (in agents/my_agent.py):
-            resolver.declare("my_agent", domains=["youtube", "file"])
+            resolver.declare("my_agent", tools=["get_watch_summary", "save_report"])
         """
-        self._agent_domains[agent_name] = domains
+        self._agent_tools[agent_name] = tools
 
     def resolve(self, agent_name: str) -> list:
-        domains = self._agent_domains.get(agent_name, [])
-        tools = []
-        for domain in domains:
-            tool_instance = registry.get(domain)
-            if not tool_instance:
-                continue
-            for method_name in DOMAIN_METHODS.get(domain, []):
-                method = getattr(tool_instance, method_name, None)
-                if method and callable(method):
-                    tools.append(method)
-        return tools
+        return [
+            self._tools[t]
+            for t in self._agent_tools.get(agent_name, [])
+            if t in self._tools
+        ]
 
 
 resolver = ToolResolver()

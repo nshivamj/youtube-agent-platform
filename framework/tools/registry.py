@@ -37,3 +37,16 @@ from framework.tools.local.entitlement_local import EntitlementLocalTools
 registry.register("youtube", "local", YouTubeLocalTools())
 registry.register("file", "local", FileLocalTools())
 registry.register("entitlement", "local", EntitlementLocalTools())
+
+# Populate resolver with active tool callables (respects TOOL_MODE).
+# Each tool class declares tool_names — registry reads the active mode instance
+# and registers each method by name. Agents then declare exactly which names
+# they need via resolver.declare(). No central DOMAIN_METHODS list needed.
+from framework.tools.resolver import resolver as _resolver
+
+for _domain in ["youtube", "file", "entitlement"]:
+    _instance = registry.get(_domain)
+    for _name in getattr(_instance, "tool_names", []):
+        _fn = getattr(_instance, _name, None)
+        if callable(_fn):
+            _resolver.register_tool(_name, _fn)

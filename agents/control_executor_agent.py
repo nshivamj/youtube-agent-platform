@@ -2,7 +2,7 @@ from google.adk.agents import LlmAgent
 from core.schemas import ControlTestResult
 from framework.tools.resolver import resolver
 
-resolver.declare("control_test_executor", domains=["entitlement"])
+resolver.declare("control_test_executor", tools=["check_user_entitlements"])
 
 
 def build_control_executor_agent() -> LlmAgent:

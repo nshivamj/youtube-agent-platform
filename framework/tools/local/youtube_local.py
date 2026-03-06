@@ -19,6 +19,13 @@ class YouTubeLocalTools(BaseTool):
 
     name = "youtube_tools"
     description = "Analyzes YouTube watch history data"
+    tool_names = [
+        "get_watch_summary",
+        "get_shorts_ratio",
+        "get_top_channels",
+        "get_watch_by_hour",
+        "get_binge_sessions",
+    ]
 
     def __init__(self):
         self._data: list[VideoItem] = []

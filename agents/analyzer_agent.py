@@ -2,7 +2,13 @@ from google.adk.agents import LlmAgent
 from core.schemas import AnalyzerOutput
 from framework.tools.resolver import resolver
 
-resolver.declare("analyzer_agent", domains=["youtube"])
+resolver.declare("analyzer_agent", tools=[
+    "get_watch_summary",
+    "get_shorts_ratio",
+    "get_top_channels",
+    "get_watch_by_hour",
+    "get_binge_sessions",
+])
 
 
 def build_analyzer_agent() -> LlmAgent:

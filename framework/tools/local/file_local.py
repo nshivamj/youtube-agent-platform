@@ -12,6 +12,7 @@ REPORTS_DIR = Path("reports")
 class FileLocalTools(BaseTool):
     name = "file_tools"
     description = "Reads and writes report files"
+    tool_names = ["save_report", "list_reports", "get_report"]
 
     def __init__(self):
         REPORTS_DIR.mkdir(exist_ok=True)
