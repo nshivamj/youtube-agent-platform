@@ -11,7 +11,23 @@
       "Bash(.venv/bin/python:*)",
       "Bash(printf:*)",
       "Bash(gtimeout 8 .venv/bin/python run_mcp_github.py)",
-      "Bash(.venv/bin/pip install:*)"
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(git -C /home/user/youtube-agent-platform log --oneline -5)",
+      "Bash(git -C /home/user/youtube-agent-platform branch -a)",
+      "Bash(/home/user/youtube-agent-platform/.env:*)",
+      "Bash(pip install -r requirements.txt -q)",
+      "Bash(pip install google-adk fastmcp pydantic python-dotenv httpx -q)",
+      "Bash(pip install google-adk fastmcp pydantic python-dotenv httpx -q --ignore-installed PyYAML)",
+      "Bash(python -c \"from platform.schemas import AnalyzerOutput; print\\(''ok''\\)\")",
+      "Bash(python -c \"import pydantic; print\\(pydantic.VERSION\\)\")",
+      "Bash(pip install \"pydantic>=2.0.0\" --upgrade -q)",
+      "Bash(python -c \"import sys; print\\(sys.path\\)\")",
+      "Bash(python -c \"import pydantic; print\\(pydantic.__file__, pydantic.VERSION\\)\")",
+      "Bash(python -c \"import pydantic; from pydantic import BaseModel; print\\(pydantic.VERSION\\)\")",
+      "Bash(git add core/ framework/ observability/ services/ workflows/ main.py requirements.txt .gitignore agents/analyzer_agent.py agents/insights_agent.py agents/planner_agent.py agents/coordinator_agent.py)",
+      "Bash(git push -u origin claude/review-project-codebase-vU58J)",
+      "Bash(git add .claude/settings.local.json agents/__init__.py)",
+      "Bash(git add agents/basic_agent/ agents/github_agent/)"
     ]
   },
   "model": "opus"
