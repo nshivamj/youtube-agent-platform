@@ -1,9 +1,9 @@
 from google.adk.agents import LlmAgent
-from control_testing.schemas import ControlTestSummary
+from core.schemas import ControlTestSummary
 from datetime import date
 
 
-def build_reporter_agent() -> LlmAgent:
+def build_control_reporter_agent() -> LlmAgent:
     today = date.today().isoformat()
     return LlmAgent(
         name="control_test_reporter",
@@ -25,10 +25,10 @@ Rules for overall_status:
 
 Fields:
   - test_date              : "{today}"
-  - compliant_users        : count of valid users WITH correct access
+  - compliant_users        : count of valid users WITH an access record
   - non_compliant_users    : count of valid users WITHOUT any access record
   - invalid_users          : count of flagged / stale accounts
-  - exceptions             : list of user_ids that FAILED (invalid or no access)
+  - exceptions             : list of user_ids that failed (invalid or no access)
   - plan_review_iterations : number of PlanReview objects in the history
   - summary_narrative      : 3–5 sentences describing what was tested, what was
                              found, and the overall control health
@@ -41,4 +41,4 @@ Write the narrative in plain business English suitable for an audit report.
     )
 
 
-control_test_reporter = build_reporter_agent()
+control_test_reporter = build_control_reporter_agent()

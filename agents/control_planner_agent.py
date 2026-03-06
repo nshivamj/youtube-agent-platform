@@ -1,8 +1,8 @@
 from google.adk.agents import LlmAgent
-from control_testing.schemas import ControlTestPlan
+from core.schemas import ControlTestPlan
 
 
-def build_planner_agent() -> LlmAgent:
+def build_control_planner_agent() -> LlmAgent:
     return LlmAgent(
         name="control_test_planner",
         model="gemini-2.0-flash",
@@ -34,4 +34,4 @@ Your only job is to produce the plan. Be specific, complete, and audit-ready.
     )
 
 
-control_test_planner = build_planner_agent()
+control_test_planner = build_control_planner_agent()

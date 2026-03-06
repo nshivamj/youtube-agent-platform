@@ -1,9 +1,10 @@
 from google.adk.agents import LlmAgent
-from control_testing.schemas import ControlTestResult
-from control_testing.tools.entitlement_tool import check_user_entitlements
+from core.schemas import ControlTestResult
+from framework.tools.resolver import resolver
 
 
-def build_executor_agent() -> LlmAgent:
+def build_control_executor_agent() -> LlmAgent:
+    tools = resolver.resolve("control_test_executor")
     return LlmAgent(
         name="control_test_executor",
         model="gemini-2.0-flash",
@@ -25,9 +26,9 @@ Steps:
 Do NOT guess. Use only the data returned by the tool.
 Do NOT skip any user. Every user in users_to_test must appear in check_results.
         """,
-        tools=[check_user_entitlements],
+        tools=tools,
         output_schema=ControlTestResult,
     )
 
 
-control_test_executor = build_executor_agent()
+control_test_executor = build_control_executor_agent()

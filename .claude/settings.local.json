@@ -29,7 +29,9 @@
       "Bash(git add .claude/settings.local.json agents/__init__.py)",
       "Bash(git add agents/basic_agent/ agents/github_agent/)",
       "Bash(gh pr list --head claude/review-project-codebase-vU58J)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git rm -r --cached control_testing/)",
+      "Bash(git add core/schemas.py framework/tools/local/entitlement_local.py framework/tools/registry.py framework/tools/resolver.py agents/control_planner_agent.py agents/control_reviewer_agent.py agents/control_executor_agent.py agents/control_reporter_agent.py workflows/control_testing_workflow.py)"
     ]
   },
   "model": "opus"

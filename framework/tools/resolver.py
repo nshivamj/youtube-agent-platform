@@ -16,6 +16,9 @@ DOMAIN_METHODS = {
         "list_reports",
         "get_report",
     ],
+    "entitlement": [
+        "check_user_entitlements",
+    ],
 }
 
 
@@ -29,6 +32,11 @@ class ToolResolver:
         "insights_agent": ["file"],
         "coordinator_agent": [],
         "planner_agent": [],
+        # Control testing agents
+        "control_test_planner": [],
+        "control_test_reviewer": [],
+        "control_test_executor": ["entitlement"],
+        "control_test_reporter": [],
     }
 
     def resolve(self, agent_name: str) -> list:

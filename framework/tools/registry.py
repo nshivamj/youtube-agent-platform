@@ -32,6 +32,8 @@ registry = ToolRegistry()
 # Register local tools
 from framework.tools.local.youtube_local import YouTubeLocalTools
 from framework.tools.local.file_local import FileLocalTools
+from framework.tools.local.entitlement_local import EntitlementLocalTools
 
 registry.register("youtube", "local", YouTubeLocalTools())
 registry.register("file", "local", FileLocalTools())
+registry.register("entitlement", "local", EntitlementLocalTools())
