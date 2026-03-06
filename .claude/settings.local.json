@@ -27,7 +27,8 @@
       "Bash(git add core/ framework/ observability/ services/ workflows/ main.py requirements.txt .gitignore agents/analyzer_agent.py agents/insights_agent.py agents/planner_agent.py agents/coordinator_agent.py)",
       "Bash(git push -u origin claude/review-project-codebase-vU58J)",
       "Bash(git add .claude/settings.local.json agents/__init__.py)",
-      "Bash(git add agents/basic_agent/ agents/github_agent/)"
+      "Bash(git add agents/basic_agent/ agents/github_agent/)",
+      "Bash(gh pr list --head claude/review-project-codebase-vU58J)"
     ]
   },
   "model": "opus"
