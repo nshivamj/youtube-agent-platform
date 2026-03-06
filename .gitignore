@@ -18,6 +18,3 @@ build/
 
 # Logs
 *.log
-
-# Generated — re-create with: python scripts/generate_adk_agents.py
-agents/
