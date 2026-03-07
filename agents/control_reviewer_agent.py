@@ -1,5 +1,6 @@
 from google.adk.agents import LlmAgent
 from core.schemas import PlanReview
+from services.llm_service import llm_service
 
 
 _REVIEW_ANGLES = [
@@ -17,7 +18,7 @@ def build_control_reviewer_agent() -> LlmAgent:
     )
     return LlmAgent(
         name="control_test_reviewer",
-        model="gemini-2.0-flash",
+        model=llm_service.get_model("control_test_reviewer"),
         instruction=f"""
 You are a peer-review auditor. The ControlTestPlan is available in the
 conversation history (produced by the planner agent just before you).

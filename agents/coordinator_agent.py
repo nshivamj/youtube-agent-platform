@@ -1,6 +1,7 @@
 from google.adk.agents import LlmAgent
 from agents.planner_agent import planner_agent
 from framework.workflow_registry import workflow_registry
+from services.llm_service import llm_service
 
 
 def build_coordinator_agent() -> LlmAgent:
@@ -11,7 +12,7 @@ def build_coordinator_agent() -> LlmAgent:
 
     return LlmAgent(
         name="coordinator_agent",
-        model="gemini-2.0-flash",
+        model=llm_service.get_model("coordinator_agent"),
         instruction=f"""
 You are the entry point for all user requests. Route to the right specialist.
 

@@ -1,11 +1,12 @@
 from google.adk.agents import LlmAgent
 from core.schemas import ControlTestPlan
+from services.llm_service import llm_service
 
 
 def build_control_planner_agent() -> LlmAgent:
     return LlmAgent(
         name="control_test_planner",
-        model="gemini-2.0-flash",
+        model=llm_service.get_model("control_test_planner"),
         instruction="""
 You are a senior IT audit specialist. Your job is to create a precise control
 testing plan for the entitlement control:

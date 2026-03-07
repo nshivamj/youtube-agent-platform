@@ -1,6 +1,7 @@
 from google.adk.agents import LlmAgent
 from core.schemas import InsightsOutput
 from framework.tools.resolver import resolver
+from services.llm_service import llm_service
 
 resolver.declare("insights_agent", tools=["save_report"])
 
@@ -9,7 +10,7 @@ def build_insights_agent() -> LlmAgent:
     tools = resolver.resolve("insights_agent")
     return LlmAgent(
         name="insights_agent",
-        model="gemini-2.0-flash",
+        model=llm_service.get_model("insights_agent"),
         instruction="""
 You generate honest, actionable insights from YouTube watch history analysis.
 

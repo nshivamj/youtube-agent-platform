@@ -1,6 +1,7 @@
 from google.adk.agents import LlmAgent
 from core.schemas import AnalyzerOutput
 from framework.tools.resolver import resolver
+from services.llm_service import llm_service
 
 resolver.declare("analyzer_agent", tools=[
     "get_watch_summary",
@@ -15,7 +16,7 @@ def build_analyzer_agent() -> LlmAgent:
     tools = resolver.resolve("analyzer_agent")
     return LlmAgent(
         name="analyzer_agent",
-        model="gemini-2.0-flash",
+        model=llm_service.get_model("analyzer_agent"),
         instruction="""
 You analyze YouTube watch history data.
 

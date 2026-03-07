@@ -56,10 +56,11 @@ class CallbackComposer(BaseCallback):
 # Default composer — standard observability only
 composer = CallbackComposer()
 
-# Governance composer — adds approval gating + risk blocking for audit workflows
-from framework.callbacks.approval_callback import ApprovalCallback   # noqa: E402
-from framework.callbacks.risk_callback import RiskCallback           # noqa: E402
+# Governance composer — adds approval gating + risk blocking + entitlement enforcement
+from framework.callbacks.approval_callback import ApprovalCallback       # noqa: E402
+from framework.callbacks.risk_callback import RiskCallback               # noqa: E402
+from framework.callbacks.entitlement_callback import EntitlementCallback  # noqa: E402
 
 governance_composer = CallbackComposer(
-    extra_callbacks=[ApprovalCallback(), RiskCallback()]
+    extra_callbacks=[ApprovalCallback(), RiskCallback(), EntitlementCallback()]
 )

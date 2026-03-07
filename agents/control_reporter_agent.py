@@ -1,13 +1,14 @@
 from google.adk.agents import LlmAgent
 from core.schemas import ControlTestSummary
 from datetime import date
+from services.llm_service import llm_service
 
 
 def build_control_reporter_agent() -> LlmAgent:
     today = date.today().isoformat()
     return LlmAgent(
         name="control_test_reporter",
-        model="gemini-2.0-flash",
+        model=llm_service.get_model("control_test_reporter"),
         instruction=f"""
 You are the audit report writer. Your job is to produce a clear, structured
 ControlTestSummary from the results available in the conversation history.

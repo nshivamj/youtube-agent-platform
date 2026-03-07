@@ -1,11 +1,12 @@
 from google.adk.agents import LlmAgent
 from core.schemas import ExecutionPlan
+from services.llm_service import llm_service
 
 
 def build_planner_agent() -> LlmAgent:
     return LlmAgent(
         name="planner_agent",
-        model="gemini-2.0-flash",
+        model=llm_service.get_model("planner_agent"),
         instruction="""
 You break complex tasks into clear, ordered execution plans.
 

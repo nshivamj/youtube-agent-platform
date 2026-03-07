@@ -1,6 +1,7 @@
 from google.adk.agents import LlmAgent
 from core.schemas import ControlTestResult
 from framework.tools.resolver import resolver
+from services.llm_service import llm_service
 
 resolver.declare("control_test_executor", tools=["check_user_entitlements"])
 
@@ -9,7 +10,7 @@ def build_control_executor_agent() -> LlmAgent:
     tools = resolver.resolve("control_test_executor")
     return LlmAgent(
         name="control_test_executor",
-        model="gemini-2.0-flash",
+        model=llm_service.get_model("control_test_executor"),
         instruction="""
 You are the test executor for the entitlement control test.
 
