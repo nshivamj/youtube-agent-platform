@@ -16,16 +16,13 @@ tools:
   - gitlab_list_pipelines
   - gitlab_get_pipeline
   - gitlab_trigger_pipeline
-output_schema: GitLabResult
 callbacks:
   shared_before:
-    - before_agent_cb
     - narration_cb
   agent_before:
     - gitlab_before_cb
-  shared_after:
-    - after_agent_cb
   agent_after:
     - gitlab_after_cb
   after_tool:
     - logging_cb
+    - tool_state_cb

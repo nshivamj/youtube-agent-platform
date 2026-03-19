@@ -48,14 +48,14 @@ class Factory:
 
         cb_cfg = cfg.get("callbacks") or {}
 
-        # --- before-agent ---
-        before_names: list[str] = cb_cfg.get("shared_before") or []
+        # --- before-agent: always start with before_agent_cb; YAML adds extras ---
+        before_names: list[str] = ["before_agent_cb"] + (cb_cfg.get("shared_before") or [])
         agent_before_names: list[str] = cb_cfg.get("agent_before") or []
         agent_before_fns = [_load_agent_callback(agent_id, n) for n in agent_before_names]
         before_cb = compose(before_names, agent_before_fns)
 
-        # --- after-agent ---
-        after_names: list[str] = cb_cfg.get("shared_after") or []
+        # --- after-agent: always end with after_agent_cb; YAML adds extras ---
+        after_names: list[str] = ["after_agent_cb"] + (cb_cfg.get("shared_after") or [])
         agent_after_names: list[str] = cb_cfg.get("agent_after") or []
         agent_after_fns = [_load_agent_callback(agent_id, n) for n in agent_after_names]
         after_cb = compose(after_names, agent_after_fns)

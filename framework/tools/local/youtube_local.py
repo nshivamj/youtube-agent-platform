@@ -1,16 +1,23 @@
 import json
 from pathlib import Path
 from datetime import datetime
+from dataclasses import dataclass
 from collections import Counter, defaultdict
-from core.schemas import (
-    VideoItem, AnalyzerOutput, BingeSession
-)
 from framework.tools.base_tool import BaseTool
 import logging
 
 logger = logging.getLogger(__name__)
 
 DATA_PATH = Path("data/watch-history.json")
+
+
+@dataclass
+class _VideoItem:
+    video_id: str
+    title: str
+    watched_at: datetime
+    channel: str
+    is_short: bool
 
 
 class YouTubeLocalTools(BaseTool):
@@ -28,7 +35,7 @@ class YouTubeLocalTools(BaseTool):
     ]
 
     def __init__(self):
-        self._data: list[VideoItem] = []
+        self._data: list[_VideoItem] = []
         self._loaded = False
 
     def _load(self):
@@ -51,16 +58,14 @@ class YouTubeLocalTools(BaseTool):
                     channel = entry["subtitles"][0].get("name", "")
                 if not time_str:
                     continue
-                watched_at = datetime.fromisoformat(
-                    time_str.replace("Z", "+00:00")
-                )
+                watched_at = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
                 is_short = "shorts" in url.lower()
-                items.append(VideoItem(
+                items.append(_VideoItem(
                     video_id=url.split("v=")[-1] if "v=" in url else url,
                     title=title,
                     watched_at=watched_at,
                     channel=channel,
-                    is_short=is_short
+                    is_short=is_short,
                 ))
             except Exception as e:
                 logger.debug(f"Skipping entry: {e}")
@@ -68,45 +73,44 @@ class YouTubeLocalTools(BaseTool):
         self._loaded = True
         logger.info(f"Loaded {len(self._data)} videos from watch history")
 
-    async def get_watch_summary(self, month: str) -> AnalyzerOutput:
+    async def get_watch_summary(self, month: str) -> dict:
         """Get summary stats for a given month (e.g. 'january', '2024-01')."""
         self._load()
         filtered = self._filter_by_month(month)
         if not filtered:
-            return AnalyzerOutput(
-                period=month, total_videos=0, shorts_count=0,
-                regular_count=0, shorts_percentage=0.0, total_hours=0.0,
-                avg_hours_per_day=0.0, top_channels=[], peak_hour=0,
-                binge_sessions=[]
-            )
+            return {
+                "period": month, "total_videos": 0, "shorts_count": 0,
+                "regular_count": 0, "shorts_percentage": 0.0, "total_hours": 0.0,
+                "avg_hours_per_day": 0.0, "top_channels": [], "peak_hour": 0,
+                "binge_sessions": [],
+            }
         shorts = [v for v in filtered if v.is_short]
-        regular = [v for v in filtered if not v.is_short]
         channels = Counter(v.channel for v in filtered if v.channel)
         hours_by_day = defaultdict(float)
         for v in filtered:
-            hours_by_day[v.watched_at.date()] += 1 / 60  # approx
+            hours_by_day[v.watched_at.date()] += 1 / 60
         days = len(hours_by_day) or 1
         hour_counts = Counter(v.watched_at.hour for v in filtered)
         peak_hour = hour_counts.most_common(1)[0][0] if hour_counts else 0
         total_hours = sum(hours_by_day.values())
 
-        return AnalyzerOutput(
-            period=month,
-            total_videos=len(filtered),
-            shorts_count=len(shorts),
-            regular_count=len(regular),
-            shorts_percentage=round(len(shorts) / len(filtered) * 100, 1),
-            total_hours=round(total_hours, 1),
-            avg_hours_per_day=round(total_hours / days, 2),
-            top_channels=[ch for ch, _ in channels.most_common(5)],
-            peak_hour=peak_hour,
-            binge_sessions=self._find_binge_sessions(filtered)
-        )
+        return {
+            "period": month,
+            "total_videos": len(filtered),
+            "shorts_count": len(shorts),
+            "regular_count": len(filtered) - len(shorts),
+            "shorts_percentage": round(len(shorts) / len(filtered) * 100, 1),
+            "total_hours": round(total_hours, 1),
+            "avg_hours_per_day": round(total_hours / days, 2),
+            "top_channels": [ch for ch, _ in channels.most_common(5)],
+            "peak_hour": peak_hour,
+            "binge_sessions": self._find_binge_sessions(filtered),
+        }
 
     async def get_shorts_ratio(self, month: str) -> float:
         """Get percentage of Shorts watched in a given month."""
         summary = await self.get_watch_summary(month)
-        return summary.shorts_percentage
+        return summary["shorts_percentage"]
 
     async def get_top_channels(self, n: int = 5) -> list[str]:
         """Get top N most-watched channels overall."""
@@ -120,17 +124,17 @@ class YouTubeLocalTools(BaseTool):
         counts = Counter(v.watched_at.hour for v in self._data)
         return {str(h): counts.get(h, 0) for h in range(24)}
 
-    async def get_binge_sessions(self, threshold_minutes: int = 120) -> list[BingeSession]:
+    async def get_binge_sessions(self, threshold_minutes: int = 120) -> list[dict]:
         """Find binge watching sessions over threshold_minutes."""
         self._load()
         return self._find_binge_sessions(self._data, threshold_minutes)
 
-    def _filter_by_month(self, month: str) -> list[VideoItem]:
+    def _filter_by_month(self, month: str) -> list[_VideoItem]:
         month_lower = month.lower().strip()
         month_names = {
             "january": 1, "february": 2, "march": 3, "april": 4,
             "may": 5, "june": 6, "july": 7, "august": 8,
-            "september": 9, "october": 10, "november": 11, "december": 12
+            "september": 9, "october": 10, "november": 11, "december": 12,
         }
         if month_lower in month_names:
             m = month_names[month_lower]
@@ -144,8 +148,8 @@ class YouTubeLocalTools(BaseTool):
         return self._data
 
     def _find_binge_sessions(
-        self, videos: list[VideoItem], threshold_minutes: int = 120
-    ) -> list[BingeSession]:
+        self, videos: list[_VideoItem], threshold_minutes: int = 120
+    ) -> list[dict]:
         if not videos:
             return []
         sorted_v = sorted(videos, key=lambda v: v.watched_at)
@@ -161,10 +165,12 @@ class YouTubeLocalTools(BaseTool):
             else:
                 duration = (prev - start).total_seconds() / 60
                 if duration >= threshold_minutes:
-                    sessions.append(BingeSession(
-                        start_time=start, end_time=prev,
-                        video_count=count, total_minutes=round(duration, 1)
-                    ))
+                    sessions.append({
+                        "start_time": start.isoformat(),
+                        "end_time": prev.isoformat(),
+                        "video_count": count,
+                        "total_minutes": round(duration, 1),
+                    })
                 start = v.watched_at
                 prev = start
                 count = 1

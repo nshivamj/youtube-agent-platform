@@ -1,5 +1,4 @@
 from pathlib import Path
-from core.schemas import ReportInput, ReportOutput
 from framework.tools.base_tool import BaseTool
 import json
 import logging
@@ -17,30 +16,31 @@ class FileLocalTools(BaseTool):
     def __init__(self):
         REPORTS_DIR.mkdir(exist_ok=True)
 
-    async def save_report(self, data: ReportInput) -> ReportOutput:
+    async def save_report(
+        self,
+        period: str,
+        summary: str,
+        overall_risk: str,
+        recommendations: list[dict],
+        analysis: dict,
+    ) -> dict:
         """Save insights report to a JSON file in the reports directory."""
-        filename = f"{data.period.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filename = f"{period.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         file_path = REPORTS_DIR / filename
         try:
             content = {
-                "period": data.period,
+                "period": period,
                 "generated_at": datetime.now().isoformat(),
-                "summary": data.insights.summary,
-                "overall_risk": data.insights.overall_risk,
-                "recommendations": [r.model_dump() for r in data.insights.recommendations],
-                "analysis": data.analysis.model_dump()
+                "summary": summary,
+                "overall_risk": overall_risk,
+                "recommendations": recommendations,
+                "analysis": analysis,
             }
             file_path.write_text(json.dumps(content, indent=2, default=str))
             logger.info(f"Report saved: {file_path}")
-            return ReportOutput(
-                file_path=str(file_path),
-                summary=data.insights.summary,
-                success=True
-            )
+            return {"file_path": str(file_path), "summary": summary, "success": True}
         except Exception as e:
-            return ReportOutput(
-                file_path="", summary="", success=False, error=str(e)
-            )
+            return {"file_path": "", "summary": "", "success": False, "error": str(e)}
 
     async def list_reports(self) -> list[str]:
         """List all saved reports."""
