@@ -1,0 +1,8 @@
+agent_name: gitlab_agent
+default_allow: true
+allowed_tools:
+  - gitlab
+denied_tools: []
+requires_approval_tools:
+  - create_mr
+  - trigger_pipeline

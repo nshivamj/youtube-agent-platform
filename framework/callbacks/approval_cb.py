@@ -1,15 +1,22 @@
 """Shared default approval callback (controller, before_tool)."""
+import logging
 import os
 from observability.tracker import tracker
+
+logger = logging.getLogger("platform.callbacks")
 
 
 def approval_cb(callback_context):
     """Gate write tools behind human approval unless AUTO_APPROVE=true."""
     tool = getattr(callback_context, "tool", None)
     requires_approval = getattr(tool, "requires_approval", False) if tool else False
+    tool_name = getattr(tool, "name", "unknown") if tool else "unknown"
 
     if not requires_approval:
+        logger.debug(f"[approval_cb] {tool_name} — no approval needed")
         return None
+
+    logger.info(f"[approval_cb] {tool_name} — requires approval")
 
     auto_approve = os.getenv("AUTO_APPROVE", "false").lower()
     if auto_approve == "true":

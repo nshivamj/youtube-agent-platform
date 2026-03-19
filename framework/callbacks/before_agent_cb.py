@@ -1,5 +1,8 @@
 """Shared default before-agent callback (controller)."""
+import logging
 import os
+
+logger = logging.getLogger("platform.callbacks")
 
 
 def before_agent_cb(callback_context):
@@ -8,12 +11,14 @@ def before_agent_cb(callback_context):
     2. Session injection — write user_goals into callback_context.state if present.
     """
     agent_name = getattr(callback_context, "agent_name", "") or ""
+    logger.info(f"🤔 Waking up {agent_name}... checking permissions")
 
     # 1. Permission check
     allowed = os.getenv("ALLOWED_AGENTS", "*")
     if allowed != "*":
         permitted = [a.strip() for a in allowed.split(",")]
         if agent_name not in permitted:
+            logger.warning(f"🚫 Blocked! {agent_name} is not in the allowed list")
             try:
                 from google.genai import types as genai_types
                 return genai_types.Content(

@@ -1,6 +1,6 @@
 agent_id: coordinator_agent
 enabled: true
-model: gemini-2.0-flash
+model: ollama/gemma3:4b
 prompt: |
   You are a coordinator. Route user requests to the correct workflow.
   Available workflows:

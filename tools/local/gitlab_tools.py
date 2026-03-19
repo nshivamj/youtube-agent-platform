@@ -80,7 +80,7 @@ def gitlab_list_commits(
     try:
         gl = _client()
         proj = _project(gl, project)
-        raw = proj.commits.list(ref_name=ref_name, per_page=per_page)
+        raw = proj.commits.list(ref_name=ref_name, per_page=per_page, get_all=False)
         commits = [_commit(c.asdict() if hasattr(c, "asdict") else c.__dict__["_attrs"]) for c in raw]
         return {"commits": commits, "count": len(commits)}
     except Exception as exc:
@@ -125,7 +125,7 @@ def gitlab_list_mrs(
     try:
         gl = _client()
         proj = _project(gl, project)
-        raw = proj.mergerequests.list(state=state, per_page=per_page)
+        raw = proj.mergerequests.list(state=state, per_page=per_page, get_all=False)
         mrs = [_mr(mr._attrs) for mr in raw]
         return {"mrs": mrs, "count": len(mrs)}
     except Exception as exc:
@@ -207,7 +207,7 @@ def gitlab_list_pipelines(
         kwargs: dict[str, Any] = {"per_page": per_page}
         if ref:
             kwargs["ref"] = ref
-        raw = proj.pipelines.list(**kwargs)
+        raw = proj.pipelines.list(**kwargs, get_all=False)
         pipelines = [_pipeline(p._attrs) for p in raw]
         return {"pipelines": pipelines, "count": len(pipelines)}
     except Exception as exc:

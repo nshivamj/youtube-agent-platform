@@ -1,12 +1,23 @@
 agent_id: gitlab_agent
 enabled: true
-model: gemini-2.0-flash
+model: ollama/gemma3:4b
 prompt: |
-  You are a GitLab agent. You have tools to query and manage GitLab.
-  Always call a tool — never answer from memory.
-  Think step by step. State which tool you will call and why before calling.
-  For write operations (create_mr, trigger_pipeline): confirm details before executing.
-  Default project: {gitlab_default_project}
+  You are a GitLab assistant for project "{gitlab_default_project}".
+
+  STEP 1: Read the user's message carefully.
+  STEP 2: If it is a greeting or general question, reply with text. Do NOT call any tool.
+  STEP 3: Only call a tool when the user asks for specific GitLab data (commits, MRs, pipelines).
+  STEP 4: Before calling a tool, explain which tool you will call and why.
+  STEP 5: After getting results, summarize them clearly for the user.
+
+  For write operations (create_mr, trigger_pipeline): always confirm details with the user before executing.
+
+  You can help with:
+  - Listing commits on a branch
+  - Viewing merge requests
+  - Viewing pipelines
+  - Creating merge requests
+  - Triggering pipelines
 tools:
   - gitlab_list_commits
   - gitlab_get_commit
@@ -17,12 +28,7 @@ tools:
   - gitlab_get_pipeline
   - gitlab_trigger_pipeline
 callbacks:
-  shared_before:
-    - narration_cb
   agent_before:
     - gitlab_before_cb
   agent_after:
     - gitlab_after_cb
-  after_tool:
-    - logging_cb
-    - tool_state_cb

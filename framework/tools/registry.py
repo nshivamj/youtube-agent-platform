@@ -1,31 +1,12 @@
-"""Tool registry — the only place that knows about ADK's FunctionTool.
+"""Tool registry -- the only place that knows about ADK's FunctionTool.
 
-Usage
------
-In a tool module:
-    from framework.tools.registry import tool
+Decorating a function with @tool() wraps it as an ADK FunctionTool and
+registers it by name. Use get_many(names) to retrieve them for an agent.
 
-    @tool()
-    def my_tool(x: str) -> dict:
-        """Does something. Returns: ..."""
-        ...
-
-    @tool(requires_approval=True)
-    def my_write_tool(x: str) -> dict:
-        """Creates something. Returns: ..."""
-        ...
-
-In the factory / agent:
-    from framework.tools.registry import get_many
-
-    tools = get_many(["my_tool", "my_write_tool"])
-
-Notes
------
-- FunctionTool extracts name from fn.__name__, description from docstring,
-  and parameters + types from type hints. Keep those accurate.
-- @tool returns the original function unchanged so modules can still call
-  their own functions directly in tests without going through ADK.
+FunctionTool extracts name from fn.__name__, description from docstring,
+and parameters + types from type hints. Keep those accurate.
+@tool returns the original function unchanged so modules can still call
+their own functions directly in tests without going through ADK.
 """
 
 from google.adk.tools import FunctionTool

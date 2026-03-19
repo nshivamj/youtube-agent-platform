@@ -3,8 +3,4 @@ type: SequentialAgent
 enabled: true
 agents:
   - gitlab_agent
-callbacks:
-  shared_before:
-    - before_agent_cb
-  shared_after:
-    - after_agent_cb
+  - summary_agent
