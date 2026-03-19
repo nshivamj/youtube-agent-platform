@@ -1,7 +1,8 @@
 """Agent Platform — entrypoint.
 
-Add new workflows by creating a workflows/<name>.py that calls workflow_registry.register().
-No changes needed here — just add a new import below.
+Agents and workflows are defined in agent_configs/ and workflow_configs/.
+Factory.bootstrap() discovers all enabled workflows and wires them into
+the coordinator automatically — no imports needed when adding new configs.
 
 Usage:
     python main.py                          # starts ADK web UI at http://localhost:8080
@@ -15,14 +16,9 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
-# Import workflows to trigger self-registration into workflow_registry.
-# Add new workflow imports here as you create them.
-import workflows.youtube_workflow           # noqa: E402, F401
-import workflows.control_testing_workflow   # noqa: E402, F401
+from framework.factory import Factory
 
-from agents.coordinator_agent import build_coordinator_agent    # noqa: E402
-
-coordinator = build_coordinator_agent()
+coordinator = Factory().bootstrap()
 
 # Exposed as root_agent so `adk web` CLI can discover it automatically.
 root_agent = coordinator
