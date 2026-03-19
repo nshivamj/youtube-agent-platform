@@ -1,1 +1,1 @@
-"""ADK web agent packages. AUTO-GENERATED."""
+# Agent definitions — each module creates and exports a singleton agent object.

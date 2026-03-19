@@ -23,6 +23,9 @@ from agents.coordinator_agent import build_coordinator_agent    # noqa: E402
 
 coordinator = build_coordinator_agent()
 
+# Exposed as root_agent so `adk web` CLI can discover it automatically.
+root_agent = coordinator
+
 if __name__ == "__main__":
     import argparse
     from google.adk.web import start_web
