@@ -1,7 +1,6 @@
 """Shared default approval callback (controller, before_tool)."""
 import os
 from observability.tracker import tracker
-from session_manager import session_mgr
 
 
 def approval_cb(callback_context):
@@ -12,7 +11,7 @@ def approval_cb(callback_context):
     if not requires_approval:
         return None
 
-    auto_approve = session_mgr.get("app:auto_approve", "false")
+    auto_approve = os.getenv("AUTO_APPROVE", "false").lower()
     if auto_approve == "true":
         agent_name = getattr(callback_context, "agent_name", "unknown")
         tool_name = getattr(tool, "name", "unknown") if tool else "unknown"

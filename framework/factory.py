@@ -11,7 +11,6 @@ import tools.local.gitlab_local  # noqa: F401
 
 from framework.callbacks.composer import compose
 from framework.tools.resolver import resolve
-from session_manager import session_mgr
 
 
 def _load_yaml(path: Path) -> dict:
@@ -43,7 +42,7 @@ class Factory:
         cfg = _load_yaml(yaml_path)
 
         tool_names: list[str] = cfg.get("tools") or []
-        tool_mode = session_mgr.get("app:tool_mode", "local")
+        tool_mode = os.getenv("TOOL_MODE", "local")
         tools = resolve(tool_names, tool_mode) if tool_names else []
 
         cb_cfg = cfg.get("callbacks") or {}
