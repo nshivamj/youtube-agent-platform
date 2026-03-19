@@ -1,8 +1,9 @@
 """
 ADK web entry point — discovered by `adk web .`
 
-Imports workflows to trigger self-registration, then builds the coordinator
-and exposes it as root_agent (required name for adk web discovery).
+All agents and workflows are defined in agent_configs/ and workflow_configs/.
+Factory.bootstrap() discovers them automatically and wires sub-agents into
+the coordinator.
 """
 import sys
 from pathlib import Path
@@ -15,9 +16,6 @@ if str(_ROOT) not in sys.path:
 from dotenv import load_dotenv
 load_dotenv()
 
-import workflows.youtube_workflow           # noqa: F401 — triggers registry registration
-import workflows.control_testing_workflow   # noqa: F401 — triggers registry registration
+from framework.factory import Factory
 
-from agents.coordinator_agent import build_coordinator_agent
-
-root_agent = build_coordinator_agent()
+root_agent = Factory().bootstrap()

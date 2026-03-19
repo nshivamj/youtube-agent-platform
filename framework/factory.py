@@ -11,6 +11,7 @@ import tools.local.gitlab_local  # noqa: F401
 
 from framework.callbacks.composer import compose
 from framework.tools.resolver import resolve
+from services.llm_service import llm_service
 
 
 def _load_yaml(path: Path) -> dict:
@@ -64,7 +65,7 @@ class Factory:
         after_tool_cb = compose(after_tool_names) if after_tool_names else None
 
         prompt = cfg.get("prompt", "")
-        model = cfg.get("model", os.getenv("MODEL", "gemini-2.0-flash"))
+        model = cfg.get("model") or llm_service.get_model(agent_id)
 
         kwargs: dict[str, Any] = dict(
             name=agent_id,
