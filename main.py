@@ -6,6 +6,7 @@ No changes needed here — just add a new import below.
 Usage:
     python main.py                          # starts ADK web UI at http://localhost:8080
     python main.py --port 9090              # custom port
+    adk web .                               # ADK CLI — discovers coordinator_agent/ package
 """
 
 import logging

@@ -14,8 +14,12 @@ correct workflow via the `WorkflowRegistry`.
 **Run it:**
 ```bash
 python main.py              # starts ADK web UI at http://localhost:8080
-adk web                     # ADK CLI — picks up root_agent from main.py
+python main.py --port 9090  # custom port
+adk web .                   # ADK CLI — discovers coordinator_agent/ package from project root
 ```
+
+`adk web` requires a directory of agent packages (each subdir = one agent with `__init__.py` + `agent.py`).
+`coordinator_agent/agent.py` is that entry point; `main.py` is the programmatic alternative.
 
 ---
 
@@ -24,8 +28,12 @@ adk web                     # ADK CLI — picks up root_agent from main.py
 ```
 youtube-agent-platform/
 │
-├── main.py                         # Entry point — imports workflows, builds coordinator,
-│                                   # exposes root_agent for adk web CLI
+├── main.py                         # Programmatic entry point — imports workflows, builds
+│                                   # coordinator, calls start_web(). Run: python main.py
+│
+├── coordinator_agent/              # ADK web package — discovered by `adk web .`
+│   ├── __init__.py
+│   └── agent.py                    # Imports workflows, builds coordinator, exposes root_agent
 │
 ├── agents/                         # Agent definitions (Python, not YAML)
 │   ├── coordinator_agent.py        # Routes to workflows via WorkflowRegistry
