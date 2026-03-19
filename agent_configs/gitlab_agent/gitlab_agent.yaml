@@ -1,0 +1,31 @@
+agent_id: gitlab_agent
+enabled: true
+model: gemini-2.0-flash
+prompt: |
+  You are a GitLab agent. You have tools to query and manage GitLab.
+  Always call a tool — never answer from memory.
+  Think step by step. State which tool you will call and why before calling.
+  For write operations (create_mr, trigger_pipeline): confirm details before executing.
+  Default project: {gitlab_default_project}
+tools:
+  - gitlab_list_commits
+  - gitlab_get_commit
+  - gitlab_list_mrs
+  - gitlab_get_mr
+  - gitlab_create_mr
+  - gitlab_list_pipelines
+  - gitlab_get_pipeline
+  - gitlab_trigger_pipeline
+output_schema: GitLabResult
+callbacks:
+  shared_before:
+    - before_agent_cb
+    - narration_cb
+  agent_before:
+    - gitlab_before_cb
+  shared_after:
+    - after_agent_cb
+  agent_after:
+    - gitlab_after_cb
+  after_tool:
+    - logging_cb

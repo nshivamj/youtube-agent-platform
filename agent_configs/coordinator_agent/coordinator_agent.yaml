@@ -1,0 +1,17 @@
+agent_id: coordinator_agent
+enabled: true
+model: gemini-2.0-flash
+prompt: |
+  You are a coordinator. Route user requests to the correct workflow.
+  Available workflows:
+  - gitlab_workflow: ALL GitLab requests — commits, MRs, pipelines, projects
+  Route only. Do not answer questions yourself.
+  If not routable, say so.
+tools: []
+output_schema: null
+callbacks:
+  shared_before: []
+  agent_before: []
+  shared_after: []
+  agent_after: []
+  after_tool: []
