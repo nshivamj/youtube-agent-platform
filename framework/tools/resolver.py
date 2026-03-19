@@ -59,3 +59,32 @@ class ToolResolver:
 
 
 resolver = ToolResolver()
+
+
+# ---------------------------------------------------------------------------
+# Module-level functional API — used by framework/factory.py
+# ---------------------------------------------------------------------------
+
+import framework.tools.local_registry as _local_reg
+import framework.tools.mcp_registry as _mcp_reg
+
+
+def resolve(tool_names: list[str], tool_mode: str = "local") -> list:
+    """Resolve a list of tool names to ADK-callable functions.
+
+    tool_mode='local' → local registry only.
+    tool_mode='mcp'   → mcp registry with local fallback.
+    """
+    from framework.tools.base_tool import BaseTool
+
+    result = []
+    for name in tool_names:
+        if tool_mode == "mcp":
+            tool = _mcp_reg.get(name) or _local_reg.get(name)
+        else:
+            tool = _local_reg.get(name)
+
+        if tool is None:
+            raise KeyError(f"Tool '{name}' not found in registry (mode={tool_mode})")
+        result.append(tool.to_adk_function())
+    return result
