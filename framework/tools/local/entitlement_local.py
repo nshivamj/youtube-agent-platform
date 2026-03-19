@@ -5,7 +5,6 @@ In production, replace _ENTITLEMENT_DB with a real IAM / LDAP / SailPoint
 API call.  Swapping to an MCP implementation requires zero agent code changes
 (just register "entitlement", "mcp", EntitlementMCPTools() in the registry).
 """
-from core.schemas import EntitlementCheckResult
 from framework.tools.base_tool import BaseTool
 import logging
 
@@ -52,7 +51,7 @@ class EntitlementLocalTools(BaseTool):
         self,
         app_name: str,
         users: list[str],
-    ) -> list[EntitlementCheckResult]:
+    ) -> list[dict]:
         """
         Check whether a list of users have access to the given application.
 
@@ -61,16 +60,13 @@ class EntitlementLocalTools(BaseTool):
             users:    List of user IDs / usernames to validate.
 
         Returns:
-            One EntitlementCheckResult per user with has_access, access_type,
-            is_valid_user, and a plain-English reason.
+            One dict per user with has_access, access_type, is_valid_user, and reason.
         """
         app_key = app_name.lower()
         app_entitlements: dict[str, str] = _ENTITLEMENT_DB.get(app_key, {})
-        logger.info(
-            f"Checking {len(users)} users against '{app_name}' entitlements"
-        )
+        logger.info(f"Checking {len(users)} users against '{app_name}' entitlements")
 
-        results: list[EntitlementCheckResult] = []
+        results = []
         for user_id in users:
             user_key = user_id.strip().lower()
             is_valid = user_key not in _INVALID_USERS
@@ -84,16 +80,14 @@ class EntitlementLocalTools(BaseTool):
             else:
                 reason = f"'{user_id}' has NO entitlement record for {app_name}."
 
-            results.append(
-                EntitlementCheckResult(
-                    user_id=user_id,
-                    app_name=app_name,
-                    has_access=has_access,
-                    access_type=access_type,
-                    is_valid_user=is_valid,
-                    reason=reason,
-                )
-            )
+            results.append({
+                "user_id": user_id,
+                "app_name": app_name,
+                "has_access": has_access,
+                "access_type": access_type,
+                "is_valid_user": is_valid,
+                "reason": reason,
+            })
 
         return results
 

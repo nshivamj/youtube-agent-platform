@@ -8,10 +8,3 @@ prompt: |
   Route only. Do not answer questions yourself.
   If not routable, say so.
 tools: []
-output_schema: null
-callbacks:
-  shared_before: []
-  agent_before: []
-  shared_after: []
-  agent_after: []
-  after_tool: []

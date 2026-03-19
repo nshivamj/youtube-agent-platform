@@ -1,14 +1,8 @@
 """GitLab local tool implementations. Self-registers all tools on import."""
 import os
-import time
 from typing import Any
 
 from framework.tools.base_tool import BaseTool, ToolResult
-from agent_configs.gitlab_agent.transformers.gitlab_to_output import (
-    raw_to_commit,
-    raw_to_mr,
-    raw_to_pipeline,
-)
 
 try:
     import gitlab as python_gitlab
@@ -22,8 +16,7 @@ def _get_client():
         raise RuntimeError("python-gitlab is not installed. Run: pip install python-gitlab")
     url = os.getenv("GITLAB_URL", "https://gitlab.com")
     token = os.getenv("GITLAB_TOKEN", "")
-    gl = python_gitlab.Gitlab(url=url, private_token=token)
-    return gl
+    return python_gitlab.Gitlab(url=url, private_token=token)
 
 
 def _get_project(gl, project_path: str | None = None):
@@ -31,6 +24,40 @@ def _get_project(gl, project_path: str | None = None):
     if not path:
         raise ValueError("No GitLab project specified. Set GITLAB_DEFAULT_PROJECT in .env.")
     return gl.projects.get(path)
+
+
+def _commit(raw: dict) -> dict:
+    return {
+        "sha": raw.get("id", ""),
+        "short_sha": raw.get("short_id", raw.get("id", "")[:8]),
+        "title": raw.get("title", ""),
+        "author": raw.get("author_name", ""),
+        "date": raw.get("created_at", ""),
+        "url": raw.get("web_url", ""),
+    }
+
+
+def _mr(raw: dict) -> dict:
+    author = raw.get("author", {})
+    return {
+        "iid": raw.get("iid", 0),
+        "title": raw.get("title", ""),
+        "state": raw.get("state", ""),
+        "source_branch": raw.get("source_branch", ""),
+        "target_branch": raw.get("target_branch", ""),
+        "author": author.get("name", "") if isinstance(author, dict) else str(author),
+        "url": raw.get("web_url", ""),
+    }
+
+
+def _pipeline(raw: dict) -> dict:
+    return {
+        "id": raw.get("id", 0),
+        "status": raw.get("status", ""),
+        "ref": raw.get("ref", ""),
+        "created_at": raw.get("created_at", ""),
+        "url": raw.get("web_url", ""),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -47,8 +74,8 @@ class ListCommitsTool(BaseTool):
             gl = _get_client()
             proj = _get_project(gl, project)
             raw = proj.commits.list(ref_name=ref_name, per_page=per_page)
-            commits = [raw_to_commit(c.asdict() if hasattr(c, "asdict") else c.__dict__["_attrs"]) for c in raw]
-            return ToolResult(success=True, data=[c.model_dump() for c in commits], metadata={"count": len(commits)})
+            commits = [_commit(c.asdict() if hasattr(c, "asdict") else c.__dict__["_attrs"]) for c in raw]
+            return ToolResult(success=True, data=commits, metadata={"count": len(commits)})
         except Exception as exc:
             return ToolResult(success=False, error=str(exc))
 
@@ -63,8 +90,7 @@ class GetCommitTool(BaseTool):
             gl = _get_client()
             proj = _get_project(gl, project)
             raw = proj.commits.get(sha)
-            commit = raw_to_commit(raw._attrs)
-            return ToolResult(success=True, data=commit.model_dump())
+            return ToolResult(success=True, data=_commit(raw._attrs))
         except Exception as exc:
             return ToolResult(success=False, error=str(exc))
 
@@ -79,8 +105,8 @@ class ListMRsTool(BaseTool):
             gl = _get_client()
             proj = _get_project(gl, project)
             raw = proj.mergerequests.list(state=state, per_page=per_page)
-            mrs = [raw_to_mr(mr._attrs) for mr in raw]
-            return ToolResult(success=True, data=[m.model_dump() for m in mrs], metadata={"count": len(mrs)})
+            mrs = [_mr(mr._attrs) for mr in raw]
+            return ToolResult(success=True, data=mrs, metadata={"count": len(mrs)})
         except Exception as exc:
             return ToolResult(success=False, error=str(exc))
 
@@ -95,8 +121,7 @@ class GetMRTool(BaseTool):
             gl = _get_client()
             proj = _get_project(gl, project)
             raw = proj.mergerequests.get(iid)
-            mr = raw_to_mr(raw._attrs)
-            return ToolResult(success=True, data=mr.model_dump())
+            return ToolResult(success=True, data=_mr(raw._attrs))
         except Exception as exc:
             return ToolResult(success=False, error=str(exc))
 
@@ -116,7 +141,7 @@ class CreateMRTool(BaseTool):
                 "title": title,
                 "description": description,
             })
-            return ToolResult(success=True, data=raw_to_mr(mr._attrs).model_dump())
+            return ToolResult(success=True, data=_mr(mr._attrs))
         except Exception as exc:
             return ToolResult(success=False, error=str(exc))
 
@@ -134,8 +159,8 @@ class ListPipelinesTool(BaseTool):
             if ref:
                 kwargs["ref"] = ref
             raw = proj.pipelines.list(**kwargs)
-            pipelines = [raw_to_pipeline(p._attrs) for p in raw]
-            return ToolResult(success=True, data=[p.model_dump() for p in pipelines], metadata={"count": len(pipelines)})
+            pipelines = [_pipeline(p._attrs) for p in raw]
+            return ToolResult(success=True, data=pipelines, metadata={"count": len(pipelines)})
         except Exception as exc:
             return ToolResult(success=False, error=str(exc))
 
@@ -150,8 +175,7 @@ class GetPipelineTool(BaseTool):
             gl = _get_client()
             proj = _get_project(gl, project)
             raw = proj.pipelines.get(pipeline_id)
-            pipeline = raw_to_pipeline(raw._attrs)
-            return ToolResult(success=True, data=pipeline.model_dump())
+            return ToolResult(success=True, data=_pipeline(raw._attrs))
         except Exception as exc:
             return ToolResult(success=False, error=str(exc))
 
@@ -166,7 +190,7 @@ class TriggerPipelineTool(BaseTool):
             gl = _get_client()
             proj = _get_project(gl, project)
             pipeline = proj.pipelines.create({"ref": ref, "variables": variables or []})
-            return ToolResult(success=True, data=raw_to_pipeline(pipeline._attrs).model_dump())
+            return ToolResult(success=True, data=_pipeline(pipeline._attrs))
         except Exception as exc:
             return ToolResult(success=False, error=str(exc))
 
