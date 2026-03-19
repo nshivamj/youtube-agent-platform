@@ -2,7 +2,7 @@ from google.adk.runners import Runner
 from google.genai import types
 from framework.callbacks.composer import CallbackComposer, composer
 from framework.tools.resolver import resolver
-from core.session_manager import session_manager
+from core.session import session_manager
 import logging
 from typing import Callable
 
@@ -29,7 +29,7 @@ class AgentRuntime:
             self._runners[name] = Runner(
                 agent=agent,
                 app_name=self.app_name,
-                session_service=session_manager.service,
+                session_service=session_manager.adk_service,
             )
         return self._runners[name]
 
@@ -108,7 +108,7 @@ class AgentRuntime:
     ) -> dict:
         """Run 1: execute until agent pauses for approval. Save state. Return."""
         result = await self.execute_streaming(agent, user_id, session_id, message, stream_fn)
-        pending = session_manager.get("awaiting_approval", False)
+        pending = session_manager.read("awaiting_approval", False)
         if pending:
             return {"status": "waiting_for_approval"}
         return {"status": "complete", "result": result}
@@ -123,7 +123,7 @@ class AgentRuntime:
     ) -> dict:
         """Run 2: continue execution after human approves/rejects/modifies."""
         if decision == "cancel":
-            session_manager.save("awaiting_approval", False)
+            session_manager.write("awaiting_approval", False)
             return {"status": "cancelled"}
 
         message = f"The user has approved. Decision: {decision}. Please continue."
