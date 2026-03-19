@@ -5,25 +5,27 @@ that decides what gets written to state and under which key.
 
 Add entries to _PERSIST to include new tools. Format: tool_name → state_key.
 """
+from google.adk.tools import BaseTool
+from google.adk.agents.context import Context
 
 # tool_name → session state key
 _PERSIST: dict[str, str] = {
     # GitLab
-    "gitlab_list_commits": "gitlab_commits",
-    "gitlab_list_mrs": "gitlab_mrs",
+    "gitlab_list_commits":   "gitlab_commits",
+    "gitlab_list_mrs":       "gitlab_mrs",
     "gitlab_list_pipelines": "gitlab_pipelines",
     # YouTube (wire when those agents are added)
-    "get_watch_summary": "watch_summary",
-    "get_binge_sessions": "binge_sessions",
-    "get_top_channels": "top_channels",
+    "get_watch_summary":     "watch_summary",
+    "get_binge_sessions":    "binge_sessions",
+    "get_top_channels":      "top_channels",
     # Entitlement
     "check_user_entitlements": "entitlement_result",
 }
 
 
-def tool_state_cb(tool, args: dict, tool_context, tool_response: dict):
+def tool_state_cb(tool: BaseTool, args: dict, context: Context, response: dict) -> None:
     """Write tool output to session state if the tool is in _PERSIST."""
     key = _PERSIST.get(tool.name)
     if key:
-        tool_context.state[key] = tool_response
+        context.state[key] = response
     return None  # pass response through to the LLM unchanged

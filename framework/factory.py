@@ -1,16 +1,15 @@
 """Factory: builds agents and workflows from YAML config files."""
 import importlib
-import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import yaml
 
-# Trigger self-registration of all local tools
-import tools.local.gitlab_local  # noqa: F401
+# Register every @tool-decorated function before resolving names
+import tools.all_tools  # noqa: F401
 
-from framework.callbacks.composer import compose
-from framework.tools.resolver import resolve
+from framework.callbacks.composer import SHARED_REGISTRY
+from framework.tools.registry import get_many
 from services.llm_service import llm_service
 
 
@@ -19,7 +18,7 @@ def _load_yaml(path: Path) -> dict:
         return yaml.safe_load(fh) or {}
 
 
-def _load_agent_callback(agent_id: str, cb_name: str):
+def _load_agent_callback(agent_id: str, cb_name: str) -> Callable:
     """Dynamically import an agent-specific callback function."""
     module_path = f"agent_configs.{agent_id}.callbacks.{cb_name}"
     try:
@@ -29,6 +28,19 @@ def _load_agent_callback(agent_id: str, cb_name: str):
         raise ImportError(
             f"Cannot load agent callback '{cb_name}' from '{module_path}': {exc}"
         )
+
+
+def _resolve_callbacks(names: list[str], agent_specific: list[Callable]) -> list[Callable]:
+    """Look up shared callbacks by name and append agent-specific ones."""
+    result = []
+    for name in names:
+        if name not in SHARED_REGISTRY:
+            raise KeyError(
+                f"Unknown shared callback '{name}'. Available: {list(SHARED_REGISTRY)}"
+            )
+        result.append(SHARED_REGISTRY[name])
+    result.extend(agent_specific)
+    return result
 
 
 class Factory:
@@ -43,26 +55,24 @@ class Factory:
         cfg = _load_yaml(yaml_path)
 
         tool_names: list[str] = cfg.get("tools") or []
-        tool_mode = os.getenv("TOOL_MODE", "local")
-        tools = resolve(tool_names, tool_mode) if tool_names else []
+        tools = get_many(tool_names) if tool_names else []
 
         cb_cfg = cfg.get("callbacks") or {}
 
-        # --- before-agent: always start with before_agent_cb; YAML adds extras ---
-        before_names: list[str] = ["before_agent_cb"] + (cb_cfg.get("shared_before") or [])
-        agent_before_names: list[str] = cb_cfg.get("agent_before") or []
-        agent_before_fns = [_load_agent_callback(agent_id, n) for n in agent_before_names]
-        before_cb = compose(before_names, agent_before_fns)
+        # before_agent: always starts with before_agent_cb; YAML adds extras
+        before_cbs = _resolve_callbacks(
+            ["before_agent_cb"] + (cb_cfg.get("shared_before") or []),
+            [_load_agent_callback(agent_id, n) for n in (cb_cfg.get("agent_before") or [])],
+        )
 
-        # --- after-agent: always end with after_agent_cb; YAML adds extras ---
-        after_names: list[str] = ["after_agent_cb"] + (cb_cfg.get("shared_after") or [])
-        agent_after_names: list[str] = cb_cfg.get("agent_after") or []
-        agent_after_fns = [_load_agent_callback(agent_id, n) for n in agent_after_names]
-        after_cb = compose(after_names, agent_after_fns)
+        # after_agent: always ends with after_agent_cb; YAML adds extras
+        after_cbs = _resolve_callbacks(
+            ["after_agent_cb"] + (cb_cfg.get("shared_after") or []),
+            [_load_agent_callback(agent_id, n) for n in (cb_cfg.get("agent_after") or [])],
+        )
 
-        # --- after-tool ---
-        after_tool_names: list[str] = cb_cfg.get("after_tool") or []
-        after_tool_cb = compose(after_tool_names) if after_tool_names else None
+        # after_tool: YAML-only, no default
+        after_tool_cbs = _resolve_callbacks(cb_cfg.get("after_tool") or [], [])
 
         prompt = cfg.get("prompt", "")
         model = cfg.get("model") or llm_service.get_model(agent_id)
@@ -72,13 +82,11 @@ class Factory:
             model=model,
             instruction=prompt,
             tools=tools,
+            before_agent_callback=before_cbs,
+            after_agent_callback=after_cbs,
         )
-        if before_cb:
-            kwargs["before_agent_callback"] = before_cb
-        if after_cb:
-            kwargs["after_agent_callback"] = after_cb
-        if after_tool_cb:
-            kwargs["after_tool_callback"] = after_tool_cb
+        if after_tool_cbs:
+            kwargs["after_tool_callback"] = after_tool_cbs
 
         return LlmAgent(**kwargs)
 
@@ -89,46 +97,32 @@ class Factory:
         yaml_path = self.WORKFLOW_CONFIGS_DIR / workflow_id / f"{workflow_id}.yaml"
         cfg = _load_yaml(yaml_path)
 
-        agent_ids: list[str] = cfg.get("agents") or []
-        sub_agents = [self.create_agent(aid) for aid in agent_ids]
+        sub_agents = [self.create_agent(aid) for aid in (cfg.get("agents") or [])]
 
         cb_cfg = cfg.get("callbacks") or {}
-        before_names: list[str] = cb_cfg.get("shared_before") or []
-        after_names: list[str] = cb_cfg.get("shared_after") or []
-        before_cb = compose(before_names) if before_names else None
-        after_cb = compose(after_names) if after_names else None
+        before_cbs = _resolve_callbacks(cb_cfg.get("shared_before") or [], [])
+        after_cbs = _resolve_callbacks(cb_cfg.get("shared_after") or [], [])
 
-        kwargs: dict[str, Any] = dict(
-            name=workflow_id,
-            sub_agents=sub_agents,
-        )
-        if before_cb:
-            kwargs["before_agent_callback"] = before_cb
-        if after_cb:
-            kwargs["after_agent_callback"] = after_cb
+        kwargs: dict[str, Any] = dict(name=workflow_id, sub_agents=sub_agents)
+        if before_cbs:
+            kwargs["before_agent_callback"] = before_cbs
+        if after_cbs:
+            kwargs["after_agent_callback"] = after_cbs
 
         return SequentialAgent(**kwargs)
 
     def bootstrap(self):
         """Create all enabled workflows, wire into coordinator, return coordinator."""
-        from google.adk.agents import LlmAgent
-
-        # Discover enabled workflows
         workflows = []
         if self.WORKFLOW_CONFIGS_DIR.exists():
             for wf_dir in sorted(self.WORKFLOW_CONFIGS_DIR.iterdir()):
                 yaml_path = wf_dir / f"{wf_dir.name}.yaml"
                 if not yaml_path.exists():
                     continue
-                cfg = _load_yaml(yaml_path)
-                if cfg.get("enabled", True):
+                if _load_yaml(yaml_path).get("enabled", True):
                     workflows.append(self.create_workflow(wf_dir.name))
 
-        # Build coordinator
         coordinator = self.create_agent("coordinator_agent")
-
-        # Attach workflows as sub-agents
         if workflows:
             coordinator.sub_agents = workflows
-
         return coordinator
